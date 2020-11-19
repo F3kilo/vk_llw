@@ -1,6 +1,6 @@
 [package]
 name = "vk_llw"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["KirFed <f3lkilo@yandex.ru>"]
 edition = "2018"
 description = "Low level wrappers for Vulkan API objects that makes creation and destroying safe"
