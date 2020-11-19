@@ -5,6 +5,7 @@ pub mod debug_report;
 pub mod device;
 pub mod instance;
 pub mod memory;
+pub mod queue;
 
 fn get_c_str_pointers(strs: &[CString]) -> Vec<*const i8> {
     let mut ptrs = Vec::with_capacity(strs.len());
