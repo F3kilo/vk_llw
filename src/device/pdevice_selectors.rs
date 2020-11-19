@@ -1,4 +1,4 @@
-use crate::device::QueueInfo;
+use crate::device::QueuesInfo;
 use crate::instance::Instance;
 use ash::version::InstanceV1_0;
 use ash::vk;
@@ -26,7 +26,7 @@ pub fn first_with_flags(instance: &Instance, required_flags: QueueFlags) -> Phys
     Ok(PhysicalDeviceInfo {
         pdevice,
         physical_device_features: Default::default(),
-        queues_info: vec![QueueInfo {
+        queues_info: vec![QueuesInfo {
             family_index,
             count: 1,
         }],
@@ -62,7 +62,7 @@ fn first_device_with_family_flags(
 
 pub struct PhysicalDeviceInfo {
     pub pdevice: PhysicalDevice,
-    pub queues_info: Vec<QueueInfo>,
+    pub queues_info: Vec<QueuesInfo>,
     pub physical_device_features: vk::PhysicalDeviceFeatures,
 }
 

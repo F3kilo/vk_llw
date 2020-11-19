@@ -91,8 +91,12 @@ impl Device {
 
     /// # Safety
     /// TODO
-    pub unsafe fn pdevice_info(&self) -> &PhysicalDeviceInfo {
-        &self.unique_device.pdevice_info()
+    pub unsafe fn pdevice(&self) -> &vk::PhysicalDevice {
+        &self.unique_device.pdevice_info().pdevice
+    }
+
+    pub fn queues_info(&self) -> &Vec<QueuesInfo> {
+        unsafe { &self.unique_device.pdevice_info().queues_info }
     }
 
     pub fn instance(&self) -> &Instance {
@@ -170,7 +174,7 @@ impl fmt::Display for UniqueDevice {
     }
 }
 
-pub struct QueueInfo {
+pub struct QueuesInfo {
     pub family_index: u32,
     pub count: u32,
 }
@@ -181,7 +185,7 @@ struct QueueCreateInfosBuilder {
 }
 
 impl QueueCreateInfosBuilder {
-    pub fn new<'a>(infos: impl Iterator<Item = &'a QueueInfo>) -> Self {
+    pub fn new<'a>(infos: impl Iterator<Item = &'a QueuesInfo>) -> Self {
         let queue_infos = infos
             .map(|info| vk::DeviceQueueCreateInfo {
                 queue_count: info.count,
