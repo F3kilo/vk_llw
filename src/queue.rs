@@ -40,6 +40,8 @@ impl Queue {
         Err(GetQueueError::BadFamilyIndex)
     }
 
+    /// # Safety
+    /// TODO
     pub unsafe fn handle(&self) -> &vk::Queue {
         &self.handle
     }
@@ -70,12 +72,14 @@ impl Error for GetQueueError {}
 impl fmt::Display for GetQueueError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::BadFamilyIndex => {
-                write!("Device must be created with queues with specefied family index")
-            }
-            Self::BadQueueIndex => {
-                write!("Queue index must be less or equal to count of queues in specified family")
-            }
+            Self::BadFamilyIndex => write!(
+                f,
+                "Device must be created with queues with specefied family index"
+            ),
+            Self::BadQueueIndex => write!(
+                f,
+                "Queue index must be less or equal to count of queues in specified family"
+            ),
         }
     }
 }

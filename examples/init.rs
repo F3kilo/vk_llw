@@ -4,12 +4,14 @@ use std::error::Error;
 use std::ffi::CString;
 use std::fmt;
 use std::ops::BitXor;
+use vk_llw::buffer::{BufferBuilder, CreateBufferError};
 use vk_llw::debug_report::{
     CreateDebugReportError, DebugReport, DebugReportBuilder, DebugReportResult,
 };
 use vk_llw::device::{pdevice_selectors, CreateDeviceError, DeviceBuilder};
 use vk_llw::instance::{Instance, InstanceBuilder};
 use vk_llw::memory::{MemAllocError, MemoryBuilder};
+use vk_llw::queue::{GetQueueError, Queue};
 
 fn main() {
     env_logger::builder()
@@ -34,7 +36,14 @@ fn init_vulkan() -> InitVkResult<()> {
     let device = DeviceBuilder::new(pdevice_selector).build(instance)?;
     log::info!("Selected device: {}", device);
 
-    let _some_memory = MemoryBuilder::new(256, 0).build(device)?;
+    let fam_index = device.queues_info()[0].family_index;
+    let queue = Queue::get(device.clone(), fam_index, 0)?;
+    let _memory = MemoryBuilder::new(256, 0).build(device.clone())?;
+    let _buffer = BufferBuilder::default()
+        .with_size(128)
+        .with_usage(vk::BufferUsageFlags::TRANSFER_SRC)
+        .build(device, &[queue.family_index()])?;
+
     Ok(())
 }
 
@@ -63,6 +72,8 @@ pub enum InitVkError {
     CreateDeviceError(CreateDeviceError),
     CreateDebugReportError(CreateDebugReportError),
     MemAllocError(MemAllocError),
+    GetQueueError(GetQueueError),
+    CreateBufferError(CreateBufferError),
 }
 
 impl Error for InitVkError {}
@@ -75,6 +86,8 @@ impl fmt::Display for InitVkError {
             Self::CreateDeviceError(e) => write!(f, "Can't create vk device: {}", e),
             Self::CreateDebugReportError(e) => write!(f, "Can't create vk debug report: {}", e),
             Self::MemAllocError(e) => write!(f, "Can't allocate memory: {}", e),
+            Self::GetQueueError(e) => write!(f, "Can't get queue: {}", e),
+            Self::CreateBufferError(e) => write!(f, "Can't create buffer: {}", e),
         }
     }
 }
@@ -106,5 +119,17 @@ impl From<CreateDebugReportError> for InitVkError {
 impl From<MemAllocError> for InitVkError {
     fn from(e: MemAllocError) -> Self {
         Self::MemAllocError(e)
+    }
+}
+
+impl From<GetQueueError> for InitVkError {
+    fn from(e: GetQueueError) -> Self {
+        Self::GetQueueError(e)
+    }
+}
+
+impl From<CreateBufferError> for InitVkError {
+    fn from(e: CreateBufferError) -> Self {
+        Self::CreateBufferError(e)
     }
 }
