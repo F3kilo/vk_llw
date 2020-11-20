@@ -5,6 +5,7 @@ use std::ffi::CString;
 use std::fmt;
 use std::ops::BitXor;
 use vk_llw::buffer::{BufferBuilder, CreateBufferError};
+use vk_llw::command_pool::{CommandPoolBuilder, CreateCommandPoolError};
 use vk_llw::debug_report::{
     CreateDebugReportError, DebugReport, DebugReportBuilder, DebugReportResult,
 };
@@ -42,8 +43,12 @@ fn init_vulkan() -> InitVkResult<()> {
     let _buffer = BufferBuilder::default()
         .with_size(128)
         .with_usage(vk::BufferUsageFlags::TRANSFER_SRC)
-        .build(device, &[queue.family_index()])?;
+        .build(device.clone(), &[queue.family_index()])?;
 
+    let _command_pool = CommandPoolBuilder::new(queue.family_index())
+        .with_flags(vk::CommandPoolCreateFlags::TRANSIENT)
+        .build(device)?;
+    
     Ok(())
 }
 
@@ -74,6 +79,7 @@ pub enum InitVkError {
     MemAllocError(MemAllocError),
     GetQueueError(GetQueueError),
     CreateBufferError(CreateBufferError),
+    CreateCommandPoolError(CreateCommandPoolError),
 }
 
 impl Error for InitVkError {}
@@ -88,6 +94,7 @@ impl fmt::Display for InitVkError {
             Self::MemAllocError(e) => write!(f, "Can't allocate memory: {}", e),
             Self::GetQueueError(e) => write!(f, "Can't get queue: {}", e),
             Self::CreateBufferError(e) => write!(f, "Can't create buffer: {}", e),
+            Self::CreateCommandPoolError(e) => write!(f, "Can't create command pool: {}", e),
         }
     }
 }
@@ -131,5 +138,11 @@ impl From<GetQueueError> for InitVkError {
 impl From<CreateBufferError> for InitVkError {
     fn from(e: CreateBufferError) -> Self {
         Self::CreateBufferError(e)
+    }
+}
+
+impl From<CreateCommandPoolError> for InitVkError {
+    fn from(e: CreateCommandPoolError) -> Self {
+        Self::CreateCommandPoolError(e)
     }
 }

@@ -58,11 +58,21 @@ impl CommandPool {
     pub fn device(&self) -> &Device {
         &self.unique_command_pool.device()
     }
+
+    pub fn queue_family_index(&self) -> u32 {
+        self.unique_command_pool.queue_family_index()
+    }
+
+    pub fn flags(&self) -> vk::CommandPoolCreateFlags {
+        self.unique_command_pool.flags()
+    }
 }
 
 struct UniqueCommandPool {
     handle: vk::CommandPool,
     device: Device,
+    queue_family_index: u32,
+    flags: vk::CommandPoolCreateFlags,
 }
 
 impl UniqueCommandPool {
@@ -70,8 +80,18 @@ impl UniqueCommandPool {
         device: Device,
         create_info: &vk::CommandPoolCreateInfo,
     ) -> CreateCommandPoolResult<Self> {
+        log::trace!(
+            "Creating command pool for queue family: {} and flags: {:?}",
+            create_info.queue_family_index,
+            create_info.flags
+        );
         let handle = unsafe { device.handle().create_command_pool(create_info, None)? };
-        Ok(Self { handle, device })
+        Ok(Self {
+            handle,
+            device,
+            queue_family_index: create_info.queue_family_index,
+            flags: create_info.flags,
+        })
     }
 
     pub unsafe fn handle(&self) -> &vk::CommandPool {
@@ -80,6 +100,25 @@ impl UniqueCommandPool {
 
     pub fn device(&self) -> &Device {
         &self.device
+    }
+
+    pub fn queue_family_index(&self) -> u32 {
+        self.queue_family_index
+    }
+
+    pub fn flags(&self) -> vk::CommandPoolCreateFlags {
+        self.flags
+    }
+}
+
+impl Drop for UniqueCommandPool {
+    fn drop(&mut self) {
+        log::trace!(
+            "Creating command pool for queue family: {} and flags: {:?}",
+            self.queue_family_index,
+            self.flags
+        );
+        unsafe { self.device.handle().destroy_command_pool(self.handle, None) }
     }
 }
 
