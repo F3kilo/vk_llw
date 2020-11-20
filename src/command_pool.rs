@@ -1,0 +1,107 @@
+use crate::device::Device;
+use ash::version::DeviceV1_0;
+use ash::vk;
+use std::error::Error;
+use std::fmt;
+use std::sync::Arc;
+
+pub struct CommandPoolBuilder {
+    flags: vk::CommandPoolCreateFlags,
+    queue_family_index: u32,
+}
+
+impl CommandPoolBuilder {
+    pub fn new(queue_family_index: u32) -> Self {
+        Self {
+            queue_family_index,
+            flags: Default::default(),
+        }
+    }
+
+    pub fn with_flags(mut self, flags: vk::CommandPoolCreateFlags) -> Self {
+        self.flags = flags;
+        self
+    }
+
+    pub fn build(self, device: Device) -> CreateCommandPoolResult<CommandPool> {
+        let create_info = vk::CommandPoolCreateInfo {
+            flags: self.flags,
+            queue_family_index: self.queue_family_index,
+            ..Default::default()
+        };
+
+        CommandPool::new(device, &create_info)
+    }
+}
+
+#[derive(Clone)]
+pub struct CommandPool {
+    unique_command_pool: Arc<UniqueCommandPool>,
+}
+
+impl CommandPool {
+    pub fn new(
+        device: Device,
+        create_info: &vk::CommandPoolCreateInfo,
+    ) -> CreateCommandPoolResult<Self> {
+        UniqueCommandPool::new(device, create_info).map(|ucp| Self {
+            unique_command_pool: Arc::new(ucp),
+        })
+    }
+
+    /// # Safety
+    /// TODO
+    pub unsafe fn handle(&self) -> &vk::CommandPool {
+        &self.unique_command_pool.handle()
+    }
+
+    pub fn device(&self) -> &Device {
+        &self.unique_command_pool.device()
+    }
+}
+
+struct UniqueCommandPool {
+    handle: vk::CommandPool,
+    device: Device,
+}
+
+impl UniqueCommandPool {
+    pub fn new(
+        device: Device,
+        create_info: &vk::CommandPoolCreateInfo,
+    ) -> CreateCommandPoolResult<Self> {
+        let handle = unsafe { device.handle().create_command_pool(create_info, None)? };
+        Ok(Self { handle, device })
+    }
+
+    pub unsafe fn handle(&self) -> &vk::CommandPool {
+        &self.handle
+    }
+
+    pub fn device(&self) -> &Device {
+        &self.device
+    }
+}
+
+pub type CreateCommandPoolResult<T> = Result<T, CreateCommandPoolError>;
+
+#[derive(Debug)]
+pub enum CreateCommandPoolError {
+    VkError(vk::Result),
+}
+
+impl Error for CreateCommandPoolError {}
+
+impl fmt::Display for CreateCommandPoolError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::VkError(e) => write!(f, "Can't create command pool: {}", e),
+        }
+    }
+}
+
+impl From<vk::Result> for CreateCommandPoolError {
+    fn from(e: vk::Result) -> Self {
+        Self::VkError(e)
+    }
+}
