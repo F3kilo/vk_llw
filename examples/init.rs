@@ -5,6 +5,7 @@ use std::ffi::CString;
 use std::fmt;
 use std::ops::BitXor;
 use vk_llw::buffer::{BufferBuilder, CreateBufferError};
+use vk_llw::command_buffer::{AllocateCommandBuffersError, CommandBuffersBuilder};
 use vk_llw::command_pool::{CommandPoolBuilder, CreateCommandPoolError};
 use vk_llw::debug_report::{
     CreateDebugReportError, DebugReport, DebugReportBuilder, DebugReportResult,
@@ -45,10 +46,14 @@ fn init_vulkan() -> InitVkResult<()> {
         .with_usage(vk::BufferUsageFlags::TRANSFER_SRC)
         .build(device.clone(), &[queue.family_index()])?;
 
-    let _command_pool = CommandPoolBuilder::new(queue.family_index())
+    let command_pool = CommandPoolBuilder::new(queue.family_index())
         .with_flags(vk::CommandPoolCreateFlags::TRANSIENT)
-        .build(device)?;    
-    
+        .build(device.clone())?;
+
+    let _command_buffers = CommandBuffersBuilder::default()
+        .with_count(4)
+        .build(command_pool, device)?;
+
     Ok(())
 }
 
@@ -80,6 +85,7 @@ pub enum InitVkError {
     GetQueueError(GetQueueError),
     CreateBufferError(CreateBufferError),
     CreateCommandPoolError(CreateCommandPoolError),
+    AllocateCommandBuffersError(AllocateCommandBuffersError),
 }
 
 impl Error for InitVkError {}
@@ -95,6 +101,9 @@ impl fmt::Display for InitVkError {
             Self::GetQueueError(e) => write!(f, "Can't get queue: {}", e),
             Self::CreateBufferError(e) => write!(f, "Can't create buffer: {}", e),
             Self::CreateCommandPoolError(e) => write!(f, "Can't create command pool: {}", e),
+            Self::AllocateCommandBuffersError(e) => {
+                write!(f, "Can't allocate command buffers: {}", e)
+            }
         }
     }
 }
@@ -144,5 +153,11 @@ impl From<CreateBufferError> for InitVkError {
 impl From<CreateCommandPoolError> for InitVkError {
     fn from(e: CreateCommandPoolError) -> Self {
         Self::CreateCommandPoolError(e)
+    }
+}
+
+impl From<AllocateCommandBuffersError> for InitVkError {
+    fn from(e: AllocateCommandBuffersError) -> Self {
+        Self::AllocateCommandBuffersError(e)
     }
 }
