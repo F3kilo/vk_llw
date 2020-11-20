@@ -1,14 +1,16 @@
 use ash::vk;
 use std::ffi::{CStr, CString};
 
+pub mod buffer;
+pub mod command_buffer;
+pub mod command_pool;
 pub mod debug_report;
+pub mod desc_set_layout;
 pub mod device;
 pub mod instance;
 pub mod memory;
 pub mod queue;
-pub mod buffer;
-pub mod command_pool;
-pub mod command_buffer;
+pub mod sampler;
 
 fn get_c_str_pointers(strs: &[CString]) -> Vec<*const i8> {
     let mut ptrs = Vec::with_capacity(strs.len());
