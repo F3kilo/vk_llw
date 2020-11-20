@@ -7,6 +7,47 @@ use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
 
+pub struct CommandBuffersBuilder {
+    level: vk::CommandBufferLevel,
+    count: u32,
+}
+
+impl CommandBuffersBuilder {
+    pub fn with_level(mut self, level: vk::CommandBufferLevel) -> Self {
+        self.level = level;
+        self
+    }
+
+    pub fn with_count(mut self, count: u32) -> Self {
+        self.count = count;
+        self
+    }
+
+    pub fn build(
+        self,
+        pool: CommandPool,
+        device: Device,
+    ) -> AllocateCommandBuffersResult<CommandBuffers> {
+        let alloc_info = vk::CommandBufferAllocateInfo {
+            level: self.level,
+            command_buffer_count: self.count,
+            command_pool: unsafe { *pool.handle() },
+            ..Default::default()
+        };
+
+        CommandBuffers::allocate(&alloc_info, device, pool)
+    }
+}
+
+impl Default for CommandBuffersBuilder {
+    fn default() -> Self {
+        CommandBuffersBuilder {
+            level: vk::CommandBufferLevel::PRIMARY,
+            count: 1,
+        }
+    }
+}
+
 #[derive(Clone, Eq, PartialEq)]
 pub struct CommandBuffers {
     command_buffers: Arc<UniqueCommandBuffers>,

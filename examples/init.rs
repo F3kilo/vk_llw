@@ -47,7 +47,7 @@ fn init_vulkan() -> InitVkResult<()> {
 
     let _command_pool = CommandPoolBuilder::new(queue.family_index())
         .with_flags(vk::CommandPoolCreateFlags::TRANSIENT)
-        .build(device)?;
+        .build(device)?;    
     
     Ok(())
 }
