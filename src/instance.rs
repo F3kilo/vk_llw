@@ -65,7 +65,7 @@ impl InstanceBuilder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Instance {
     unique_instance: Arc<UniqueInstance>,
 }
@@ -113,5 +113,13 @@ impl Drop for UniqueInstance {
     fn drop(&mut self) {
         log::trace!("Destroying vulkan instance");
         unsafe { self.handle.destroy_instance(None) }
+    }
+}
+
+impl Eq for UniqueInstance {}
+
+impl PartialEq for UniqueInstance {
+    fn eq(&self, other: &Self) -> bool {
+        self.handle.handle() == other.handle.handle()
     }
 }

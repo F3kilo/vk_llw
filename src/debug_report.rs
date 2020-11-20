@@ -140,7 +140,7 @@ unsafe extern "system" fn debug_report_callback(
     vk::FALSE
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct DebugReport {
     unique_debug_report: Arc<UniqueDebugReport>,
 }
@@ -210,6 +210,14 @@ impl Drop for UniqueDebugReport {
                 .destroy_debug_report_callback(self.handle, None);
             let _cb = Box::from_raw(self.callback);
         }
+    }
+}
+
+impl Eq for UniqueDebugReport {}
+
+impl PartialEq for UniqueDebugReport {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { self.handle() == other.handle() }
     }
 }
 

@@ -26,7 +26,7 @@ impl MemoryBuilder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Memory {
     unique_memory: Arc<UniqueMemory>,
 }
@@ -49,6 +49,7 @@ impl Memory {
     }
 }
 
+#[derive(Eq, PartialEq)]
 struct UniqueMemory {
     device: Device,
     handle: vk::DeviceMemory,

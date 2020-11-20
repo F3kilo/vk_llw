@@ -61,7 +61,7 @@ impl DeviceBuilder {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Device {
     unique_device: Arc<UniqueDevice>,
 }
@@ -211,6 +211,14 @@ impl QueueCreateInfosBuilder {
             inf.p_queue_priorities = self.prioreties.as_ptr()
         }
         &self.queue_infos
+    }
+}
+
+impl Eq for UniqueDevice {}
+
+impl PartialEq for UniqueDevice {
+    fn eq(&self, other: &Self) -> bool {
+        self.handle.handle() == other.handle.handle()
     }
 }
 

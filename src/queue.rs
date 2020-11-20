@@ -59,6 +59,14 @@ impl Queue {
     }
 }
 
+impl Eq for Queue {}
+
+impl PartialEq for Queue {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { self.handle() == other.handle() }
+    }
+}
+
 pub type GetQueueResult<T> = Result<T, GetQueueError>;
 
 #[derive(Debug)]

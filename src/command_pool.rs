@@ -34,7 +34,7 @@ impl CommandPoolBuilder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct CommandPool {
     unique_command_pool: Arc<UniqueCommandPool>,
 }
@@ -68,6 +68,7 @@ impl CommandPool {
     }
 }
 
+#[derive(Eq, PartialEq)]
 struct UniqueCommandPool {
     handle: vk::CommandPool,
     device: Device,

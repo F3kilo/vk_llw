@@ -53,7 +53,7 @@ impl BufferBuilder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Buffer {
     unique_buffer: Arc<UniqueBuffer>,
 }
@@ -132,8 +132,16 @@ impl Drop for UniqueBuffer {
             self.size,
             self.usage
         );
-        
+
         unsafe { self.device.handle().destroy_buffer(self.handle, None) }
+    }
+}
+
+impl Eq for UniqueBuffer {}
+
+impl PartialEq for UniqueBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { self.handle() == other.handle() }
     }
 }
 
