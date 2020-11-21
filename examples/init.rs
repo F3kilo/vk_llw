@@ -14,6 +14,7 @@ use vk_llw::device::{pdevice_selectors, CreateDeviceError, DeviceBuilder};
 use vk_llw::instance::{Instance, InstanceBuilder};
 use vk_llw::memory::{MemAllocError, MemoryBuilder};
 use vk_llw::queue::{GetQueueError, Queue};
+use vk_llw::sampler::{CreateSamplerError, SamplerBuilder};
 
 fn main() {
     env_logger::builder()
@@ -53,7 +54,9 @@ fn init_vulkan() -> InitVkResult<()> {
 
     let _command_buffers = CommandBuffersBuilder::default()
         .with_count(4)
-        .build(command_pool, device)?;
+        .build(command_pool, device.clone())?;
+
+    let _sampler = SamplerBuilder::default().build(device)?;
 
     Ok(())
 }
@@ -87,6 +90,7 @@ pub enum InitVkError {
     CreateBufferError(CreateBufferError),
     CreateCommandPoolError(CreateCommandPoolError),
     AllocateCommandBuffersError(AllocateCommandBuffersError),
+    CreateSamplerError(CreateSamplerError),
 }
 
 impl Error for InitVkError {}
@@ -105,6 +109,7 @@ impl fmt::Display for InitVkError {
             Self::AllocateCommandBuffersError(e) => {
                 write!(f, "Can't allocate command buffers: {}", e)
             }
+            Self::CreateSamplerError(e) => write!(f, "Can't create sampler: {}", e),
         }
     }
 }
@@ -160,5 +165,11 @@ impl From<CreateCommandPoolError> for InitVkError {
 impl From<AllocateCommandBuffersError> for InitVkError {
     fn from(e: AllocateCommandBuffersError) -> Self {
         Self::AllocateCommandBuffersError(e)
+    }
+}
+
+impl From<CreateSamplerError> for InitVkError {
+    fn from(e: CreateSamplerError) -> Self {
+        Self::CreateSamplerError(e)
     }
 }
