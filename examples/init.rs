@@ -24,6 +24,7 @@ fn main() {
 }
 
 fn init_vulkan() -> InitVkResult<()> {
+    Vec::leak(vec![3u8; 1024]);
     let entry = ash::Entry::new()?;
     let layers = instance_layers(entry.clone());
     let instance = InstanceBuilder::new(entry)
