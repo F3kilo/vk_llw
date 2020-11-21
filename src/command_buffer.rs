@@ -35,7 +35,7 @@ impl CommandBuffersBuilder {
             ..Default::default()
         };
 
-        CommandBuffers::allocate(&alloc_info, device, pool)
+        unsafe { CommandBuffers::allocate(&alloc_info, device, pool) }
     }
 }
 
@@ -54,7 +54,9 @@ pub struct CommandBuffers {
 }
 
 impl CommandBuffers {
-    pub fn allocate(
+    /// # Safety
+    /// todo
+    pub unsafe fn allocate(
         allocate_info: &vk::CommandBufferAllocateInfo,
         device: Device,
         pool: CommandPool,
@@ -99,7 +101,7 @@ struct UniqueCommandBuffers {
 }
 
 impl UniqueCommandBuffers {
-    pub fn allocate(
+    pub unsafe fn allocate(
         allocate_info: &vk::CommandBufferAllocateInfo,
         device: Device,
         pool: CommandPool,
@@ -109,7 +111,9 @@ impl UniqueCommandBuffers {
             allocate_info.command_buffer_count,
             allocate_info.level
         );
-        let handles = unsafe { device.handle().allocate_command_buffers(allocate_info) }?;
+
+        let handles = device.handle().allocate_command_buffers(allocate_info)?;
+
         Ok({
             Self {
                 handles,

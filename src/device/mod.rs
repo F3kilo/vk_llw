@@ -57,7 +57,7 @@ impl DeviceBuilder {
 
         create_info.p_enabled_features = &pdevice_info.physical_device_features;
 
-        Device::new(instance, pdevice_info, &create_info)
+        unsafe { Device::new(instance, pdevice_info, &create_info) }
     }
 }
 
@@ -73,7 +73,9 @@ impl fmt::Display for Device {
 }
 
 impl Device {
-    pub fn new(
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
         instance: Instance,
         pdevice_info: PhysicalDeviceInfo,
         create_info: &vk::DeviceCreateInfo,
@@ -111,18 +113,17 @@ struct UniqueDevice {
 }
 
 impl UniqueDevice {
-    pub fn new(
+    pub unsafe fn new(
         instance: Instance,
         pdevice_info: PhysicalDeviceInfo,
         create_info: &vk::DeviceCreateInfo,
     ) -> Result<Self, CreateDeviceError> {
         log::trace!("Creating device");
 
-        let handle = unsafe {
-            instance
-                .handle()
-                .create_device(pdevice_info.pdevice, create_info, None)?
-        };
+        let handle = instance
+            .handle()
+            .create_device(pdevice_info.pdevice, create_info, None)?;
+
         Ok(Self {
             instance,
             pdevice_info,

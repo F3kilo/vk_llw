@@ -106,7 +106,7 @@ impl DebugReportBuilder {
             ..Default::default()
         };
 
-        DebugReport::new(instance, &create_info, ud)
+        unsafe { DebugReport::new(instance, &create_info, ud) }
     }
 
     pub fn default_logger_callback() -> Callback {
@@ -146,7 +146,9 @@ pub struct DebugReport {
 }
 
 impl DebugReport {
-    pub fn new(
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
         instance: Instance,
         create_info: &vk::DebugReportCallbackCreateInfoEXT,
         callback: *mut Callback,
@@ -175,16 +177,18 @@ struct UniqueDebugReport {
 }
 
 impl UniqueDebugReport {
-    pub fn new(
+    pub unsafe fn new(
         instance: Instance,
         create_info: &vk::DebugReportCallbackCreateInfoEXT,
         callback: *mut Callback,
     ) -> DebugReportResult<Self> {
         let level: MessageLevel = create_info.flags.into();
         log::trace!("Creating vk debug report with level: {}", level);
-        let instance_raw = unsafe { instance.handle() }.clone();
+
+        let instance_raw = instance.handle().clone();
         let debug_report = ext::DebugReport::new(instance.entry(), &instance_raw);
-        let handle = unsafe { debug_report.create_debug_report_callback(create_info, None)? };
+        let handle = debug_report.create_debug_report_callback(create_info, None)?;
+
         Ok(Self {
             debug_report,
             handle,

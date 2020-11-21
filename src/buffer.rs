@@ -49,7 +49,7 @@ impl BufferBuilder {
             ..Default::default()
         };
 
-        Buffer::new(device, &create_info)
+        unsafe { Buffer::new(device, &create_info) }
     }
 }
 
@@ -59,7 +59,12 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn new(device: Device, create_info: &vk::BufferCreateInfo) -> CreateBufferResult<Self> {
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
+        device: Device,
+        create_info: &vk::BufferCreateInfo,
+    ) -> CreateBufferResult<Self> {
         UniqueBuffer::new(device, create_info).map(|ub| Self {
             unique_buffer: Arc::new(ub),
         })
@@ -92,14 +97,18 @@ struct UniqueBuffer {
 }
 
 impl UniqueBuffer {
-    pub fn new(device: Device, create_info: &vk::BufferCreateInfo) -> CreateBufferResult<Self> {
+    pub unsafe fn new(
+        device: Device,
+        create_info: &vk::BufferCreateInfo,
+    ) -> CreateBufferResult<Self> {
         log::trace!(
             "Creating vk buffer with size: {} and usage: {:?}",
             create_info.size,
             create_info.usage
         );
 
-        let handle = unsafe { device.handle().create_buffer(create_info, None)? };
+        let handle = device.handle().create_buffer(create_info, None)?;
+
         Ok(Self {
             handle,
             device,

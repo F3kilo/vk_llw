@@ -30,7 +30,7 @@ impl CommandPoolBuilder {
             ..Default::default()
         };
 
-        CommandPool::new(device, &create_info)
+        unsafe { CommandPool::new(device, &create_info) }
     }
 }
 
@@ -40,7 +40,9 @@ pub struct CommandPool {
 }
 
 impl CommandPool {
-    pub fn new(
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
         device: Device,
         create_info: &vk::CommandPoolCreateInfo,
     ) -> CreateCommandPoolResult<Self> {
@@ -77,7 +79,7 @@ struct UniqueCommandPool {
 }
 
 impl UniqueCommandPool {
-    pub fn new(
+    pub unsafe fn new(
         device: Device,
         create_info: &vk::CommandPoolCreateInfo,
     ) -> CreateCommandPoolResult<Self> {
@@ -86,7 +88,7 @@ impl UniqueCommandPool {
             create_info.queue_family_index,
             create_info.flags
         );
-        let handle = unsafe { device.handle().create_command_pool(create_info, None)? };
+        let handle = device.handle().create_command_pool(create_info, None)?;
         Ok(Self {
             handle,
             device,

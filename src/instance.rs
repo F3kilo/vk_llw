@@ -1,9 +1,9 @@
+use crate::{get_c_str_pointers, ContainRawVkName};
 use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk::InstanceCreateInfo;
 use ash::{vk, InstanceError};
 use std::ffi::CString;
 use std::sync::Arc;
-use crate::{get_c_str_pointers, ContainRawVkName};
 
 pub struct InstanceBuilder {
     layers: Vec<CString>,
@@ -49,7 +49,7 @@ impl InstanceBuilder {
         let extensions = get_c_str_pointers(&self.extensions);
         create_info.pp_enabled_extension_names = extensions.as_ptr();
 
-        Instance::new(self.entry, &create_info)
+        unsafe { Instance::new(self.entry, &create_info) }
     }
 
     pub fn debug_layers(entry: ash::Entry) -> Vec<CString> {
@@ -71,7 +71,12 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub fn new(entry: ash::Entry, create_info: &InstanceCreateInfo) -> Result<Self, InstanceError> {
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
+        entry: ash::Entry,
+        create_info: &InstanceCreateInfo,
+    ) -> Result<Self, InstanceError> {
         UniqueInstance::new(entry, &create_info).map(|inst| Self {
             unique_instance: Arc::new(inst),
         })
@@ -94,9 +99,12 @@ struct UniqueInstance {
 }
 
 impl UniqueInstance {
-    pub fn new(entry: ash::Entry, create_info: &InstanceCreateInfo) -> Result<Self, InstanceError> {
+    pub unsafe fn new(
+        entry: ash::Entry,
+        create_info: &InstanceCreateInfo,
+    ) -> Result<Self, InstanceError> {
         log::trace!("Creating vulkan instance");
-        let handle = unsafe { entry.create_instance(create_info, None)? };
+        let handle = entry.create_instance(create_info, None)?;
         Ok(Self { entry, handle })
     }
 

@@ -1,9 +1,9 @@
+use crate::device::Device;
 use ash::version::DeviceV1_0;
 use ash::vk;
 use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
-use crate::device::Device;
 
 pub struct MemoryBuilder {
     size: u64,
@@ -22,7 +22,7 @@ impl MemoryBuilder {
             ..Default::default()
         };
 
-        Memory::new(device, &alloc_info)
+        unsafe { Memory::new(device, &alloc_info) }
     }
 }
 
@@ -32,7 +32,12 @@ pub struct Memory {
 }
 
 impl Memory {
-    pub fn new(device: Device, allocate_info: &vk::MemoryAllocateInfo) -> MemAllocResult<Self> {
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
+        device: Device,
+        allocate_info: &vk::MemoryAllocateInfo,
+    ) -> MemAllocResult<Self> {
         UniqueMemory::new(device, allocate_info).map(|um| Self {
             unique_memory: Arc::new(um),
         })
@@ -56,13 +61,18 @@ struct UniqueMemory {
 }
 
 impl UniqueMemory {
-    pub fn new(device: Device, allocate_info: &vk::MemoryAllocateInfo) -> MemAllocResult<Self> {
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
+        device: Device,
+        allocate_info: &vk::MemoryAllocateInfo,
+    ) -> MemAllocResult<Self> {
         log::trace!(
             "Allocating vk device memory; size: {}; type_index: {}",
             allocate_info.allocation_size,
             allocate_info.memory_type_index
         );
-        let handle = unsafe { device.handle().allocate_memory(allocate_info, None)? };
+        let handle = device.handle().allocate_memory(allocate_info, None)?;
         Ok(Self { handle, device })
     }
 

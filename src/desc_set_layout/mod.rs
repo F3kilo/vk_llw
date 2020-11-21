@@ -41,7 +41,7 @@ impl DescriptorSetLayoutBuilder {
             samplers.extend(binding.samplers().clone());
         }
 
-        DescriptorSetLayout::new(&create_info, device, samplers)
+        unsafe { DescriptorSetLayout::new(&create_info, device, samplers) }
     }
 }
 
@@ -51,7 +51,9 @@ pub struct DescriptorSetLayout {
 }
 
 impl DescriptorSetLayout {
-    pub fn new(
+    /// # Safety
+    /// todo
+    pub unsafe fn new(
         create_info: &vk::DescriptorSetLayoutCreateInfo,
         device: Device,
         samplers: Vec<Sampler>,
@@ -62,7 +64,7 @@ impl DescriptorSetLayout {
     }
 
     /// # Safety
-    ///
+    /// todo
     pub unsafe fn handle(&self) -> &vk::DescriptorSetLayout {
         &self.descriptor_set_layout.handle()
     }
@@ -83,16 +85,15 @@ struct UniqueDescriptorSetLayout {
 }
 
 impl UniqueDescriptorSetLayout {
-    pub fn new(
+    pub unsafe fn new(
         create_info: &vk::DescriptorSetLayoutCreateInfo,
         device: Device,
         samplers: Vec<Sampler>,
     ) -> CreateDescriptorSetLayoutResult<Self> {
-        let handle = unsafe {
-            device
-                .handle()
-                .create_descriptor_set_layout(create_info, None)?
-        };
+        let handle = device
+            .handle()
+            .create_descriptor_set_layout(create_info, None)?;
+
         Ok(Self {
             handle,
             device,
