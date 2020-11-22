@@ -6,6 +6,7 @@ use std::ffi::CString;
 use std::fmt;
 use std::ops::BitXor;
 use vk_llw::buffer::BufferBuilder;
+use vk_llw::command_buffer::CommandBuffersBuilder;
 use vk_llw::command_pool::CommandPoolBuilder;
 use vk_llw::debug_report::{DebugReport, DebugReportBuilder};
 use vk_llw::device::{pdevice_selectors, CreateDeviceError, DeviceBuilder};
@@ -45,14 +46,16 @@ fn init_vulkan() -> InitVkResult<()> {
         .with_usage(vk::BufferUsageFlags::TRANSFER_SRC)
         .build(device.clone(), &[queue.family_index()])?;
 
-    let _command_pool =
-        CommandPoolBuilder::new(queue.family_index(), vk::CommandPoolCreateFlags::TRANSIENT)
-            .build(device)?;
+    let _command_buffers = {
+        let command_pool =
+            CommandPoolBuilder::new(queue.family_index(), vk::CommandPoolCreateFlags::TRANSIENT)
+                .build(device.clone())?;
 
-    // let _command_buffers = CommandBuffersBuilder::default()
-    //     .with_count(4)
-    //     .build(command_pool, device.clone())?;
-    //
+        CommandBuffersBuilder::default()
+            .with_count(4)
+            .build(command_pool, device)?;
+    };
+
     // let _sampler = SamplerBuilder::default().build(device.clone())?;
     //
     // let binding_info = BindingInfo::new(
