@@ -14,6 +14,8 @@ use vk_llw::instance::{Instance, InstanceBuilder};
 use vk_llw::memory::MemoryBuilder;
 use vk_llw::queue::{GetQueueError, Queue};
 use vk_llw::sampler::SamplerBuilder;
+use vk_llw::desc_set_layout::binding::{BindingInfo, BindingDescriptorType};
+use vk_llw::desc_set_layout::DescriptorSetLayoutBuilder;
 
 fn main() {
     env_logger::builder()
@@ -57,15 +59,15 @@ fn init_vulkan() -> InitVkResult<()> {
             .build(command_pool, device.clone())?;
     };
 
-    let _sampler = SamplerBuilder::default().build(device)?;
+    let _sampler = SamplerBuilder::default().build(device.clone())?;
 
-    // let binding_info = BindingInfo::new(
-    //     0,
-    //     BindingDescriptorType::UniformBuffer,
-    //     1,
-    //     vk::ShaderStageFlags::COMPUTE,
-    // );
-    // let _desc_set_layout = DescriptorSetLayoutBuilder::new(vec![binding_info]).build(device)?;
+    let binding_info = BindingInfo::new(
+        0,
+        BindingDescriptorType::UniformBuffer,
+        1,
+        vk::ShaderStageFlags::COMPUTE,
+    );
+    let _desc_set_layout = DescriptorSetLayoutBuilder::new(vec![binding_info]).build(device)?;
 
     Ok(())
 }
