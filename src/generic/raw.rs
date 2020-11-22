@@ -207,7 +207,7 @@ impl RawDeviceHandle for vk::DescriptorSetLayout {
     type DestroyInfo = ();
 
     fn name() -> &'static str {
-        "vulkan command pool"
+        "vulkan descriptor set layout"
     }
 
     unsafe fn create(create_info: &Self::CreateInfo, device: &ash::Device) -> VkResult<Self> {
@@ -225,6 +225,37 @@ impl fmt::Display for CreateInfoWrapper<vk::DescriptorSetLayoutCreateInfo> {
             f,
             "Flags: {:?}; Binding count: {};",
             self.0.flags, self.0.binding_count,
+        )
+    }
+}
+
+// ----------------------------------------------------------
+// ------------------------ Shader module -------------------
+// ----------------------------------------------------------
+
+impl RawDeviceHandle for vk::ShaderModule {
+    type CreateInfo = CreateInfoWrapper<vk::ShaderModuleCreateInfo>;
+    type DestroyInfo = ();
+
+    fn name() -> &'static str {
+        "vulkan shader module"
+    }
+
+    unsafe fn create(create_info: &Self::CreateInfo, device: &ash::Device) -> VkResult<Self> {
+        device.create_shader_module(&create_info.0, None)
+    }
+
+    unsafe fn destroy(&self, device: &ash::Device, _destroy_info: &Self::DestroyInfo) {
+        device.destroy_shader_module(*self, None)
+    }
+}
+
+impl fmt::Display for CreateInfoWrapper<vk::ShaderModuleCreateInfo> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Flags: {:?}; Code size: {};",
+            self.0.flags, self.0.code_size,
         )
     }
 }
