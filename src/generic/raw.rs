@@ -86,3 +86,33 @@ impl fmt::Display for CreateInfoWrapper<vk::BufferCreateInfo> {
         )
     }
 }
+
+// ----------------------------------------------------------
+// ------------------------ Command pool --------------------
+// ----------------------------------------------------------
+
+impl RawDeviceHandle for vk::CommandPool {
+    type CreateInfo = CreateInfoWrapper<vk::CommandPoolCreateInfo>;
+
+    fn name() -> &'static str {
+        "vulkan command pool"
+    }
+
+    unsafe fn create(create_info: &Self::CreateInfo, device: &ash::Device) -> VkResult<Self> {
+        device.create_command_pool(&create_info.0, None)
+    }
+
+    unsafe fn destroy(&self, device: &ash::Device) {
+        device.destroy_command_pool(*self, None)
+    }
+}
+
+impl fmt::Display for CreateInfoWrapper<vk::CommandPoolCreateInfo> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Flags: {:?}; Queue family index: {};",
+            self.0.flags, self.0.queue_family_index,
+        )
+    }
+}
