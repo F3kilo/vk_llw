@@ -5,6 +5,7 @@ use ash::vk;
 
 pub type Sampler = DeviceHandle<vk::Sampler>;
 
+#[derive(Default)]
 pub struct SamplerBuilder {
     create_info: vk::SamplerCreateInfo,
 }
