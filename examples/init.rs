@@ -9,13 +9,14 @@ use vk_llw::buffer::BufferBuilder;
 use vk_llw::command_buffer::CommandBuffersBuilder;
 use vk_llw::command_pool::CommandPoolBuilder;
 use vk_llw::debug_report::{DebugReport, DebugReportBuilder};
+use vk_llw::desc_set_layout::binding::{BindingDescriptorType, BindingInfo};
+use vk_llw::desc_set_layout::DescriptorSetLayoutBuilder;
 use vk_llw::device::{pdevice_selectors, CreateDeviceError, DeviceBuilder};
 use vk_llw::instance::{Instance, InstanceBuilder};
 use vk_llw::memory::MemoryBuilder;
 use vk_llw::queue::{GetQueueError, Queue};
 use vk_llw::sampler::SamplerBuilder;
-use vk_llw::desc_set_layout::binding::{BindingInfo, BindingDescriptorType};
-use vk_llw::desc_set_layout::DescriptorSetLayoutBuilder;
+use vk_llw::shader_module::ShaderModuleBuilder;
 
 fn main() {
     env_logger::builder()
@@ -67,7 +68,11 @@ fn init_vulkan() -> InitVkResult<()> {
         1,
         vk::ShaderStageFlags::COMPUTE,
     );
-    let _desc_set_layout = DescriptorSetLayoutBuilder::new(vec![binding_info]).build(device)?;
+    let _desc_set_layout =
+        DescriptorSetLayoutBuilder::new(vec![binding_info]).build(device.clone())?;
+
+    let code = load_code();
+    let _shader_module = ShaderModuleBuilder::new(code).build(device)?;
 
     Ok(())
 }
@@ -86,6 +91,14 @@ pub fn debug_report(instance: Instance) -> VkResult<Option<DebugReport>> {
         .with_flags(vk::DebugReportFlagsEXT::all().bitxor(vk::DebugReportFlagsEXT::INFORMATION))
         .build(instance)
         .map(Some)
+}
+
+pub fn load_code() -> Vec<u32> {
+    let mut path = std::env::current_dir().unwrap();
+    path.push("examples/data/texture.vert.spv");
+    log::debug!("Shader code path: {:?}", path);
+    let mut file = std::fs::File::open(path).unwrap();
+    ash::util::read_spv(&mut file).unwrap()
 }
 
 pub type InitVkResult<T> = Result<T, InitVkError>;
