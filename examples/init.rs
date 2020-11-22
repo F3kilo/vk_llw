@@ -10,6 +10,8 @@ use vk_llw::command_pool::{CommandPoolBuilder, CreateCommandPoolError};
 use vk_llw::debug_report::{
     CreateDebugReportError, DebugReport, DebugReportBuilder, DebugReportResult,
 };
+use vk_llw::desc_set_layout::binding::{BindingDescriptorType, BindingInfo};
+use vk_llw::desc_set_layout::{CreateDescriptorSetLayoutError, DescriptorSetLayoutBuilder};
 use vk_llw::device::{pdevice_selectors, CreateDeviceError, DeviceBuilder};
 use vk_llw::instance::{Instance, InstanceBuilder};
 use vk_llw::memory::{MemAllocError, MemoryBuilder};
@@ -56,7 +58,15 @@ fn init_vulkan() -> InitVkResult<()> {
         .with_count(4)
         .build(command_pool, device.clone())?;
 
-    let _sampler = SamplerBuilder::default().build(device)?;
+    let _sampler = SamplerBuilder::default().build(device.clone())?;
+
+    let binding_info = BindingInfo::new(
+        0,
+        BindingDescriptorType::UniformBuffer,
+        1,
+        vk::ShaderStageFlags::COMPUTE,
+    );
+    let _desc_set_layout = DescriptorSetLayoutBuilder::new(vec![binding_info]).build(device)?;
 
     Ok(())
 }
@@ -91,6 +101,7 @@ pub enum InitVkError {
     CreateCommandPoolError(CreateCommandPoolError),
     AllocateCommandBuffersError(AllocateCommandBuffersError),
     CreateSamplerError(CreateSamplerError),
+    CreateDescriptorSetLayoutError(CreateDescriptorSetLayoutError),
 }
 
 impl Error for InitVkError {}
@@ -110,6 +121,9 @@ impl fmt::Display for InitVkError {
                 write!(f, "Can't allocate command buffers: {}", e)
             }
             Self::CreateSamplerError(e) => write!(f, "Can't create sampler: {}", e),
+            Self::CreateDescriptorSetLayoutError(e) => {
+                write!(f, "Can't create descriptor set layout: {}", e)
+            }
         }
     }
 }
@@ -171,5 +185,11 @@ impl From<AllocateCommandBuffersError> for InitVkError {
 impl From<CreateSamplerError> for InitVkError {
     fn from(e: CreateSamplerError) -> Self {
         Self::CreateSamplerError(e)
+    }
+}
+
+impl From<CreateDescriptorSetLayoutError> for InitVkError {
+    fn from(e: CreateDescriptorSetLayoutError) -> Self {
+        Self::CreateDescriptorSetLayoutError(e)
     }
 }

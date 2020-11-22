@@ -76,12 +76,17 @@ impl DescriptorSetLayout {
     pub fn samplers(&self) -> &Vec<Sampler> {
         &self.descriptor_set_layout.samplers()
     }
+
+    pub fn binding_count(&self) -> u32 {
+        self.descriptor_set_layout.binding_count()
+    }
 }
 
 struct UniqueDescriptorSetLayout {
     handle: vk::DescriptorSetLayout,
     device: Device,
     samplers: Vec<Sampler>,
+    binding_count: u32,
 }
 
 impl UniqueDescriptorSetLayout {
@@ -90,6 +95,10 @@ impl UniqueDescriptorSetLayout {
         device: Device,
         samplers: Vec<Sampler>,
     ) -> CreateDescriptorSetLayoutResult<Self> {
+        log::trace!(
+            "Creating descriptor set layout with {} bindings",
+            create_info.binding_count
+        );
         let handle = device
             .handle()
             .create_descriptor_set_layout(create_info, None)?;
@@ -98,6 +107,7 @@ impl UniqueDescriptorSetLayout {
             handle,
             device,
             samplers,
+            binding_count: create_info.binding_count,
         })
     }
 
@@ -111,6 +121,24 @@ impl UniqueDescriptorSetLayout {
 
     pub fn samplers(&self) -> &Vec<Sampler> {
         &self.samplers
+    }
+
+    pub fn binding_count(&self) -> u32 {
+        self.binding_count
+    }
+}
+
+impl Drop for UniqueDescriptorSetLayout {
+    fn drop(&mut self) {
+        log::trace!(
+            "Destroying descriptor set layout with {} bindings",
+            self.binding_count()
+        );
+        unsafe {
+            self.device
+                .handle()
+                .destroy_descriptor_set_layout(*self.handle(), None)
+        }
     }
 }
 
