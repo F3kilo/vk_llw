@@ -1,11 +1,11 @@
 use crate::instance::Instance;
 use ash::extensions::ext;
 use ash::vk;
-use std::error::Error;
 use std::ffi::CStr;
 use std::fmt;
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
+use ash::prelude::VkResult;
 
 #[derive(Debug, Copy, Clone)]
 pub enum MessageLevel {
@@ -94,7 +94,7 @@ impl DebugReportBuilder {
         self
     }
 
-    pub fn build(self, instance: Instance) -> DebugReportResult<DebugReport> {
+    pub fn build(self, instance: Instance) -> VkResult<DebugReport> {
         let cb = Box::new(self.callback);
         let ud = Box::leak(cb) as *mut Callback;
         let ud_void = ud as *mut c_void;
@@ -152,7 +152,7 @@ impl DebugReport {
         instance: Instance,
         create_info: &vk::DebugReportCallbackCreateInfoEXT,
         callback: *mut Callback,
-    ) -> DebugReportResult<Self> {
+    ) -> VkResult<Self> {
         UniqueDebugReport::new(instance, create_info, callback).map(|uniq| Self {
             unique_debug_report: Arc::new(uniq),
         })
@@ -181,7 +181,7 @@ impl UniqueDebugReport {
         instance: Instance,
         create_info: &vk::DebugReportCallbackCreateInfoEXT,
         callback: *mut Callback,
-    ) -> DebugReportResult<Self> {
+    ) -> VkResult<Self> {
         let level: MessageLevel = create_info.flags.into();
         log::trace!("Creating vk debug report with level: {}", level);
 
@@ -222,30 +222,5 @@ impl Eq for UniqueDebugReport {}
 impl PartialEq for UniqueDebugReport {
     fn eq(&self, other: &Self) -> bool {
         unsafe { self.handle() == other.handle() }
-    }
-}
-
-pub type DebugReportResult<T> = Result<T, CreateDebugReportError>;
-
-#[derive(Debug)]
-pub enum CreateDebugReportError {
-    VkError(vk::Result),
-}
-
-impl Error for CreateDebugReportError {}
-
-impl fmt::Display for CreateDebugReportError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CreateDebugReportError::VkError(e) => {
-                write!(f, "Vulkan debug report creation failed: {}", e)
-            }
-        }
-    }
-}
-
-impl From<vk::Result> for CreateDebugReportError {
-    fn from(e: vk::Result) -> Self {
-        Self::VkError(e)
     }
 }

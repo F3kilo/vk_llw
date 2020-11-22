@@ -21,12 +21,22 @@ impl<T: RawDeviceHandle> UniqueDeviceHandle<T> {
         dependencies: Vec<Box<dyn Dependence>>,
     ) -> VkResult<Self> {
         log::trace!("Creating {} with props: {}", T::name(), create_info);
-        let handle = T::create(create_info, device.handle())?;
-        Ok(Self {
-            handle,
-            device,
-            _dependencies: dependencies,
-        })
+        match T::create(create_info, device.handle()) {
+            Ok(handle) => Ok(Self {
+                handle,
+                device,
+                _dependencies: dependencies,
+            }),
+            Err(e) => {
+                log::warn!(
+                    "Creating {} with props: {} failed: {}",
+                    T::name(),
+                    create_info,
+                    e
+                );
+                Err(e)
+            }
+        }
     }
 
     /// # Safety
