@@ -197,3 +197,34 @@ impl fmt::Display for CreateInfoWrapper<vk::SamplerCreateInfo> {
         )
     }
 }
+
+// ----------------------------------------------------------
+// ------------------------ Descriptor set layout -----------
+// ----------------------------------------------------------
+
+impl RawDeviceHandle for vk::DescriptorSetLayout {
+    type CreateInfo = CreateInfoWrapper<vk::DescriptorSetLayoutCreateInfo>;
+    type DestroyInfo = ();
+
+    fn name() -> &'static str {
+        "vulkan command pool"
+    }
+
+    unsafe fn create(create_info: &Self::CreateInfo, device: &ash::Device) -> VkResult<Self> {
+        device.create_descriptor_set_layout(&create_info.0, None)
+    }
+
+    unsafe fn destroy(&self, device: &ash::Device, _destroy_info: &Self::DestroyInfo) {
+        device.destroy_descriptor_set_layout(*self, None)
+    }
+}
+
+impl fmt::Display for CreateInfoWrapper<vk::DescriptorSetLayoutCreateInfo> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Flags: {:?}; Binding count: {};",
+            self.0.flags, self.0.binding_count,
+        )
+    }
+}

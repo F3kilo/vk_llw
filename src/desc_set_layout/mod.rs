@@ -1,13 +1,12 @@
 pub mod binding;
 
 use crate::device::Device;
-use crate::sampler::Sampler;
-use ash::version::DeviceV1_0;
+use crate::generic::{Dependence, DeviceHandle, UniqueDeviceHandle};
+use ash::prelude::VkResult;
 use ash::vk;
 use binding::BindingInfo;
-use std::error::Error;
-use std::fmt;
-use std::sync::Arc;
+
+pub type DescriptorSetLayout = DeviceHandle<vk::DescriptorSetLayout>;
 
 pub struct DescriptorSetLayoutBuilder {
     bindings: Vec<BindingInfo>,
@@ -22,7 +21,7 @@ impl DescriptorSetLayoutBuilder {
         }
     }
 
-    pub fn build(self, device: Device) -> CreateDescriptorSetLayoutResult<DescriptorSetLayout> {
+    pub fn build(self, device: Device) -> VkResult<DescriptorSetLayout> {
         let binding_ptrs: Vec<vk::DescriptorSetLayoutBinding> = self
             .bindings
             .iter()
@@ -36,139 +35,16 @@ impl DescriptorSetLayoutBuilder {
             ..Default::default()
         };
 
-        let mut samplers = Vec::new();
+        let mut samplers: Vec<Box<dyn Dependence>> = Vec::new();
         for binding in &self.bindings {
-            samplers.extend(binding.samplers().clone());
+            for sampler in binding.samplers() {
+                samplers.push(Box::new(sampler.clone()))
+            }
         }
 
-        unsafe { DescriptorSetLayout::new(&create_info, device, samplers) }
-    }
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct DescriptorSetLayout {
-    descriptor_set_layout: Arc<UniqueDescriptorSetLayout>,
-}
-
-impl DescriptorSetLayout {
-    /// # Safety
-    /// todo
-    pub unsafe fn new(
-        create_info: &vk::DescriptorSetLayoutCreateInfo,
-        device: Device,
-        samplers: Vec<Sampler>,
-    ) -> CreateDescriptorSetLayoutResult<Self> {
-        UniqueDescriptorSetLayout::new(create_info, device, samplers).map(|udsl| Self {
-            descriptor_set_layout: Arc::new(udsl),
-        })
-    }
-
-    /// # Safety
-    /// todo
-    pub unsafe fn handle(&self) -> &vk::DescriptorSetLayout {
-        &self.descriptor_set_layout.handle()
-    }
-
-    pub fn device(&self) -> &Device {
-        &self.descriptor_set_layout.device()
-    }
-
-    pub fn samplers(&self) -> &Vec<Sampler> {
-        &self.descriptor_set_layout.samplers()
-    }
-
-    pub fn binding_count(&self) -> u32 {
-        self.descriptor_set_layout.binding_count()
-    }
-}
-
-struct UniqueDescriptorSetLayout {
-    handle: vk::DescriptorSetLayout,
-    device: Device,
-    samplers: Vec<Sampler>,
-    binding_count: u32,
-}
-
-impl UniqueDescriptorSetLayout {
-    pub unsafe fn new(
-        create_info: &vk::DescriptorSetLayoutCreateInfo,
-        device: Device,
-        samplers: Vec<Sampler>,
-    ) -> CreateDescriptorSetLayoutResult<Self> {
-        log::trace!(
-            "Creating descriptor set layout with {} bindings",
-            create_info.binding_count
-        );
-        let handle = device
-            .handle()
-            .create_descriptor_set_layout(create_info, None)?;
-
-        Ok(Self {
-            handle,
-            device,
-            samplers,
-            binding_count: create_info.binding_count,
-        })
-    }
-
-    pub unsafe fn handle(&self) -> &vk::DescriptorSetLayout {
-        &self.handle
-    }
-
-    pub fn device(&self) -> &Device {
-        &self.device
-    }
-
-    pub fn samplers(&self) -> &Vec<Sampler> {
-        &self.samplers
-    }
-
-    pub fn binding_count(&self) -> u32 {
-        self.binding_count
-    }
-}
-
-impl Drop for UniqueDescriptorSetLayout {
-    fn drop(&mut self) {
-        log::trace!(
-            "Destroying descriptor set layout with {} bindings",
-            self.binding_count()
-        );
         unsafe {
-            self.device
-                .handle()
-                .destroy_descriptor_set_layout(*self.handle(), None)
+            let unique = UniqueDeviceHandle::new(&create_info.into(), device, samplers, ())?;
+            Ok(DescriptorSetLayout::new(unique))
         }
-    }
-}
-
-impl Eq for UniqueDescriptorSetLayout {}
-
-impl PartialEq for UniqueDescriptorSetLayout {
-    fn eq(&self, other: &Self) -> bool {
-        unsafe { self.handle() == other.handle() }
-    }
-}
-
-pub type CreateDescriptorSetLayoutResult<T> = Result<T, CreateDescriptorSetLayoutError>;
-
-#[derive(Debug)]
-pub enum CreateDescriptorSetLayoutError {
-    VkError(vk::Result),
-}
-
-impl Error for CreateDescriptorSetLayoutError {}
-
-impl fmt::Display for CreateDescriptorSetLayoutError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::VkError(e) => write!(f, "Can't create descriptor set layout: {}", e),
-        }
-    }
-}
-
-impl From<vk::Result> for CreateDescriptorSetLayoutError {
-    fn from(e: vk::Result) -> Self {
-        Self::VkError(e)
     }
 }
