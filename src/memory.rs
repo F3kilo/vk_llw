@@ -23,7 +23,8 @@ impl MemoryBuilder {
         };
 
         unsafe {
-            let unique = UniqueDeviceHandle::new(&alloc_info.into(), device, Default::default())?;
+            let unique =
+                UniqueDeviceHandle::new(&alloc_info.into(), device, Default::default(), ())?;
             Ok(Memory::new(unique))
         }
     }

@@ -26,7 +26,7 @@ impl CommandPoolBuilder {
         };
 
         unsafe {
-            let unique = UniqueDeviceHandle::new(&create_info.into(), device, Vec::default())?;
+            let unique = UniqueDeviceHandle::new(&create_info.into(), device, Vec::default(), ())?;
             Ok(CommandPool::new(unique))
         }
     }

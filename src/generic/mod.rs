@@ -8,6 +8,7 @@ use std::sync::Arc;
 pub struct UniqueDeviceHandle<T: RawDeviceHandle> {
     handle: T,
     device: Device,
+    destroy_info: T::DestroyInfo,
     _dependencies: Vec<Box<dyn Dependence>>,
 }
 
@@ -19,12 +20,14 @@ impl<T: RawDeviceHandle> UniqueDeviceHandle<T> {
         create_info: &T::CreateInfo,
         device: Device,
         dependencies: Vec<Box<dyn Dependence>>,
+        destroy_info: T::DestroyInfo,
     ) -> VkResult<Self> {
         log::trace!("Creating {} with props: {}", T::name(), create_info);
         match T::create(create_info, device.handle()) {
             Ok(handle) => Ok(Self {
                 handle,
                 device,
+                destroy_info,
                 _dependencies: dependencies,
             }),
             Err(e) => {
@@ -49,7 +52,7 @@ impl<T: RawDeviceHandle> UniqueDeviceHandle<T> {
 impl<T: RawDeviceHandle> Drop for UniqueDeviceHandle<T> {
     fn drop(&mut self) {
         log::trace!("Destroying {}", T::name());
-        unsafe { self.handle.destroy(self.device.handle()) }
+        unsafe { self.handle.destroy(self.device.handle(), &self.destroy_info) }
     }
 }
 

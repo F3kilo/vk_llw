@@ -5,6 +5,7 @@ use std::fmt;
 
 pub trait RawDeviceHandle: Sized + Eq {
     type CreateInfo: fmt::Display;
+    type DestroyInfo: Sized;
 
     fn name() -> &'static str;
 
@@ -16,7 +17,7 @@ pub trait RawDeviceHandle: Sized + Eq {
     /// # Safety
     /// * `device` must be valid and created vulkan device.
     /// * Must not be called more then once.
-    unsafe fn destroy(&self, device: &ash::Device);
+    unsafe fn destroy(&self, device: &ash::Device, destroy_info: &Self::DestroyInfo);
 }
 
 pub struct CreateInfoWrapper<T>(pub T);
@@ -33,6 +34,7 @@ impl<T> From<T> for CreateInfoWrapper<T> {
 
 impl RawDeviceHandle for vk::DeviceMemory {
     type CreateInfo = CreateInfoWrapper<vk::MemoryAllocateInfo>;
+    type DestroyInfo = ();
 
     fn name() -> &'static str {
         "vulkan device memory"
@@ -42,7 +44,7 @@ impl RawDeviceHandle for vk::DeviceMemory {
         device.allocate_memory(&create_info.0, None)
     }
 
-    unsafe fn destroy(&self, device: &ash::Device) {
+    unsafe fn destroy(&self, device: &ash::Device, _destroy_info: &Self::DestroyInfo) {
         device.free_memory(*self, None)
     }
 }
@@ -63,6 +65,7 @@ impl fmt::Display for CreateInfoWrapper<vk::MemoryAllocateInfo> {
 
 impl RawDeviceHandle for vk::Buffer {
     type CreateInfo = CreateInfoWrapper<vk::BufferCreateInfo>;
+    type DestroyInfo = ();
 
     fn name() -> &'static str {
         "vulkan buffer"
@@ -72,7 +75,7 @@ impl RawDeviceHandle for vk::Buffer {
         device.create_buffer(&create_info.0, None)
     }
 
-    unsafe fn destroy(&self, device: &ash::Device) {
+    unsafe fn destroy(&self, device: &ash::Device, _destroy_info: &Self::DestroyInfo) {
         device.destroy_buffer(*self, None)
     }
 }
@@ -93,6 +96,7 @@ impl fmt::Display for CreateInfoWrapper<vk::BufferCreateInfo> {
 
 impl RawDeviceHandle for vk::CommandPool {
     type CreateInfo = CreateInfoWrapper<vk::CommandPoolCreateInfo>;
+    type DestroyInfo = ();
 
     fn name() -> &'static str {
         "vulkan command pool"
@@ -102,7 +106,7 @@ impl RawDeviceHandle for vk::CommandPool {
         device.create_command_pool(&create_info.0, None)
     }
 
-    unsafe fn destroy(&self, device: &ash::Device) {
+    unsafe fn destroy(&self, device: &ash::Device, _destroy_info: &Self::DestroyInfo) {
         device.destroy_command_pool(*self, None)
     }
 }
@@ -113,6 +117,37 @@ impl fmt::Display for CreateInfoWrapper<vk::CommandPoolCreateInfo> {
             f,
             "Flags: {:?}; Queue family index: {};",
             self.0.flags, self.0.queue_family_index,
+        )
+    }
+}
+
+// ----------------------------------------------------------
+// ------------------------ Command buffers -----------------
+// ----------------------------------------------------------
+
+impl RawDeviceHandle for Vec<vk::CommandBuffer> {
+    type CreateInfo = CreateInfoWrapper<vk::CommandBufferAllocateInfo>;
+    type DestroyInfo = vk::CommandPool;
+
+    fn name() -> &'static str {
+        "vulkan command buffers"
+    }
+
+    unsafe fn create(create_info: &Self::CreateInfo, device: &ash::Device) -> VkResult<Self> {
+        device.allocate_command_buffers(&create_info.0)
+    }
+
+    unsafe fn destroy(&self, device: &ash::Device, destroy_info: &Self::DestroyInfo) {
+        device.free_command_buffers(*destroy_info, self.as_slice())
+    }
+}
+
+impl fmt::Display for CreateInfoWrapper<vk::CommandBufferAllocateInfo> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Count: {}; Level: {:?};",
+            self.0.command_buffer_count, self.0.level,
         )
     }
 }
