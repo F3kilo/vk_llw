@@ -1,9 +1,9 @@
 use crate::device::Device;
-use ash::version::DeviceV1_0;
+use crate::generic::{DeviceHandle, UniqueDeviceHandle};
+use ash::prelude::VkResult;
 use ash::vk;
-use std::error::Error;
-use std::fmt;
-use std::sync::Arc;
+
+pub type Sampler = DeviceHandle<vk::Sampler>;
 
 pub struct SamplerBuilder {
     create_info: vk::SamplerCreateInfo,
@@ -77,105 +77,11 @@ impl SamplerBuilder {
         self
     }
 
-    pub fn build(self, device: Device) -> CreateSamplerResult<Sampler> {
-        unsafe { Sampler::new(&self.create_info, device) }
-    }
-}
-
-impl Default for SamplerBuilder {
-    fn default() -> Self {
-        SamplerBuilder {
-            create_info: Default::default(),
+    pub fn build(self, device: Device) -> VkResult<Sampler> {
+        unsafe {
+            let unique =
+                UniqueDeviceHandle::new(&self.create_info.into(), device, Vec::default(), ())?;
+            Ok(Sampler::new(unique))
         }
-    }
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct Sampler {
-    sampler: Arc<UniqueSampler>,
-}
-
-impl Sampler {
-    /// # Safety
-    /// todo
-    pub unsafe fn new(
-        create_info: &vk::SamplerCreateInfo,
-        device: Device,
-    ) -> CreateSamplerResult<Self> {
-        UniqueSampler::new(create_info, device).map(|s| Self {
-            sampler: Arc::new(s),
-        })
-    }
-
-    /// # Safety
-    /// todo
-    pub unsafe fn handle(&self) -> &vk::Sampler {
-        &self.sampler.handle()
-    }
-
-    pub fn device(&self) -> &Device {
-        &self.sampler.device()
-    }
-}
-
-struct UniqueSampler {
-    handle: vk::Sampler,
-    device: Device,
-}
-
-impl UniqueSampler {
-    unsafe fn new(
-        create_info: &vk::SamplerCreateInfo,
-        device: Device,
-    ) -> CreateSamplerResult<Self> {
-        log::trace!("Creating vulkan sampler");
-        let handle = device.handle().create_sampler(create_info, None)?;
-        Ok(Self { handle, device })
-    }
-
-    pub unsafe fn handle(&self) -> &vk::Sampler {
-        &self.handle
-    }
-
-    pub fn device(&self) -> &Device {
-        &self.device
-    }
-}
-
-impl Drop for UniqueSampler {
-    fn drop(&mut self) {
-        log::trace!("Destroying vulkan sampler");
-        unsafe { self.device.handle().destroy_sampler(self.handle, None) }
-    }
-}
-
-impl Eq for UniqueSampler {}
-
-impl PartialEq for UniqueSampler {
-    fn eq(&self, other: &Self) -> bool {
-        unsafe { self.handle() == other.handle() }
-    }
-}
-
-pub type CreateSamplerResult<T> = Result<T, CreateSamplerError>;
-
-#[derive(Debug)]
-pub enum CreateSamplerError {
-    VkError(vk::Result),
-}
-
-impl Error for CreateSamplerError {}
-
-impl fmt::Display for CreateSamplerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::VkError(e) => write!(f, "Can't create vk sampler: {}", e),
-        }
-    }
-}
-
-impl From<vk::Result> for CreateSamplerError {
-    fn from(e: vk::Result) -> Self {
-        Self::VkError(e)
     }
 }

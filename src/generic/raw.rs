@@ -151,3 +151,49 @@ impl fmt::Display for CreateInfoWrapper<vk::CommandBufferAllocateInfo> {
         )
     }
 }
+
+// ----------------------------------------------------------
+// ------------------------ Sampler -------------------------
+// ----------------------------------------------------------
+
+impl RawDeviceHandle for vk::Sampler {
+    type CreateInfo = CreateInfoWrapper<vk::SamplerCreateInfo>;
+    type DestroyInfo = ();
+
+    fn name() -> &'static str {
+        "vulkan sampler"
+    }
+
+    unsafe fn create(create_info: &Self::CreateInfo, device: &ash::Device) -> VkResult<Self> {
+        device.create_sampler(&create_info.0, None)
+    }
+
+    unsafe fn destroy(&self, device: &ash::Device, _destroy_info: &Self::DestroyInfo) {
+        device.destroy_sampler(*self, None)
+    }
+}
+
+impl fmt::Display for CreateInfoWrapper<vk::SamplerCreateInfo> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Flags: {:?}; Mag filter: {:?}; Min filter: {:?}; Mip map mode: {:?}; Address mode (u,v,w): ({:?},{:?},{:?}); Mip lod bias: {}; Anisotropy enable: {}; Max anisotropy: {}; Compare enable: {}; Compare op: {:?}; Min lod: {}; Max lod: {}; Border color: {:?}; Unnormolized coordinates: {};",
+            self.0.flags,
+            self.0.mag_filter,
+            self.0.min_filter,
+            self.0.mipmap_mode,
+            self.0.address_mode_u,
+            self.0.address_mode_v,
+            self.0.address_mode_w,
+            self.0.mip_lod_bias,
+            self.0.anisotropy_enable,
+            self.0.max_anisotropy,
+            self.0.compare_enable,
+            self.0.compare_op,
+            self.0.min_lod,
+            self.0.max_lod,
+            self.0.border_color,
+            self.0.unnormalized_coordinates,
+        )
+    }
+}
